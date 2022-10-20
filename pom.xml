@@ -14,10 +14,9 @@
 
   <properties>
     <java.version>17</java.version>
-    <mapstruct.version>1.5.2.Final</mapstruct.version>
-    <lombok.version>1.18.24</lombok.version>
     <junit.version>5.9.0</junit.version>
     <javax.servlet.version>4.0.1</javax.servlet.version>
+    <javax.xml.version>2.3.1</javax.xml.version>
   </properties>
 
   <dependencyManagement>
@@ -33,19 +32,38 @@
   </dependencyManagement>
 
   <dependencies>
-    <!-- Runtime dependencies-->
+    <!-- SPECIFIC dependencies for retro-compatibility of the JAXB SOAP client classes -->
     <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>${lombok.version}</version>
+      <groupId>com.sun.xml.bind</groupId>
+      <artifactId>jaxb-impl</artifactId>
+      <version>2.3.7</version>
     </dependency>
-    <!-- About the Jackson CVE warning: https://github.com/spring-projects/spring-boot/issues/32583 -->
     <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-webmvc</artifactId>
+      <groupId>com.sun.xml.messaging.saaj</groupId>
+      <artifactId>saaj-impl</artifactId>
+      <version>1.5.3</version>
     </dependency>
 
-    <!-- Provided dependencies-->
+    <!-- Runtime dependencies -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.14.0-rc1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>javax.xml.ws</groupId>
+      <artifactId>jaxws-api</artifactId>
+      <version>${javax.xml.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.ws</groupId>
+      <artifactId>spring-ws-core</artifactId>
+      <version>3.1.3</version>
+    </dependency>
+
+    <!-- Provided dependencies -->
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
@@ -53,22 +71,24 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- Test dependencies-->
+    <!-- Test dependencies -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
       <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-test</artifactId>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+    </resources>
+
     <plugins>
+      <!-- Maven compiler plugin -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -79,15 +99,15 @@
         </configuration>
       </plugin>
 
+      <!-- Plugin to generate the WAR and skip the need of web.xml -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
         <version>3.3.2</version>
-        <configuration>
-          <warSourceDirectory>src/main/java</warSourceDirectory>
-        </configuration>
       </plugin>
 
+      <!-- Plugin to deploy the generated WAR into Tomcat.
+           It requires configuration, refer to the README -->
       <plugin>
         <groupId>org.apache.tomcat.maven</groupId>
         <artifactId>tomcat7-maven-plugin</artifactId>
@@ -100,6 +120,31 @@
         </configuration>
       </plugin>
 
+      <!-- Plugin to generate classes based on the SOAP Client XSD schema.
+           It requires configuration, refer to the README -->
+      <plugin>
+        <groupId>org.jvnet.jaxb2.maven2</groupId>
+        <artifactId>maven-jaxb2-plugin</artifactId>
+        <version>0.15.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <schemaLanguage>WSDL</schemaLanguage>
+          <generatePackage>com.choice.university.dto</generatePackage>
+          <schemas>
+            <schema>
+              <url>http://localhost:8081/ws/hotels.wsdl</url>
+            </schema>
+          </schemas>
+        </configuration>
+      </plugin>
+
+      <!-- Jacoco plugin to obtain and validate test coverage -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>

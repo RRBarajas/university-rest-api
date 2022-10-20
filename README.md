@@ -8,11 +8,32 @@ adding custom validations and user-friendly requests and responses.
 ## Getting started
 
 ### SOAP Client setup
-Since this service is primarily a SOAP Client, it is extremely to have a SOAP Service is up and running.  
-We can easily change the server we're pointing to by changing the following property:
+Since this service is primarily a SOAP Client, it is extremely that the referenced SOAP Service is up and running.  
+
+The SOAP Client URL is defined in the `UniversitySoapApiClient` bean creation.  
+Make sure you have updated the `client.setDefaultUri()` to the URL of your SOAP API.
+
+
+The URL is also used in the POM's `maven-jaxb2-plugin` to generate Java classes based on the SOAP Service WSDL.  
+This makes our project dependent on the API exposing the WSDL file.  
+In addition, we are storing the generated classes in a particular package.  
+
+Please update the following properties from the plugin to match your services:  
 ```bash
-TBD
+<schema><url>: URL in which the SOAP API serves the WSDL.
+*You can add many URL nodes if there are multiple schemas.
+
+<generatePackage>: The package name where you want to store the generated classes.
+NOTE: If you change this, make sure you also change the following:
+- The setContextPath() in UniversitySoapApiConfig.class.
+- The new package is component scaned in UniversityWebConfig.class.
+- The references to the generated classes throughout the project.
 ```
+
+If the SOAP API is not exposing the WSDL, or we simply don't want to use the plugin, 
+we can remove it from the POM, but we will have to manually create the classes needed to parse the SOAP responses.  
+Be mindful that doing this could break the code, and you may need to refactor the code. 
+
 
 ### Building the project
 
